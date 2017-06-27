@@ -183,6 +183,13 @@ export default class DocBuilder {
     const kinds = ['class', 'function', 'variable', 'typedef', 'external'];
     const allDocs = this._find({kind: kinds}).filter(v => !v.builtinExternal);
     const kindOrder = {class: 0, interface: 1, function: 2, variable: 3, typedef: 4, external: 5};
+    const kindHeaders = {
+      class: 'Classes',
+      function: 'Functions',
+      variable: 'Variables',
+      typedef: 'Typedefs',
+      external: 'External'
+    };
 
     // see: IdentifiersDocBuilder#_buildIdentifierDoc
     allDocs.sort((a, b)=>{
@@ -190,28 +197,44 @@ export default class DocBuilder {
       const filePathB = b.longname.split('~')[0];
       const kindA = a.interface ? 'interface' : a.kind;
       const kindB = b.interface ? 'interface' : b.kind;
-      if (filePathA === filePathB) {
-        if (kindA === kindB) {
+      if (kindA === kindB) {
+        if (filePathA === filePathB) {
           return a.longname > b.longname ? 1 : -1;
         } else {
-          return kindOrder[kindA] > kindOrder[kindB] ? 1 : -1;
+          return filePathA > filePathB ? 1 : -1;
         }
       } else {
-        return filePathA > filePathB ? 1 : -1;
+        return kindOrder[kindA] > kindOrder[kindB] ? 1 : -1;
       }
     });
+
     let lastDirPath = '.';
+    let lastKind = '';
     ice.loop('doc', allDocs, (i, doc, ice)=>{
-      const dirPath = doc.longname.replace(/\.[^/.]+$/, '');
       const kind = doc.interface ? 'interface' : doc.kind;
       const kindText = kind.charAt(0).toUpperCase();
       const kindClass = `kind-${kind}`;
+
+      let dirPath;
+
+      if (kind === 'variable' || kind === 'function') {
+        dirPath = doc.longname.replace(/\.[^/.]+$/, '');
+      } else {
+        dirPath = path.dirname(doc.longname.split('~')[0]);
+      }
+
       ice.load('name', this._buildDocLinkHTML(doc.longname));
       ice.load('kind', kindText);
       ice.attr('kind', 'class', kindClass);
+
       ice.text('dirPath', dirPath);
       ice.attr('dirPath', 'href', `identifiers.html#${escapeURLHash(dirPath)}`);
       ice.drop('dirPath', lastDirPath === dirPath);
+
+      ice.text('kindHeader', kindHeaders[kind]);
+      ice.drop('kindHeader', lastKind === kind);
+
+      lastKind = kind;
       lastDirPath = dirPath;
     });
 
