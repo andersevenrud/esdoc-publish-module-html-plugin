@@ -195,13 +195,18 @@ export default class DocBuilder {
     allDocs.sort((a, b)=>{
       const filePathA = a.longname.split('~')[0];
       const filePathB = b.longname.split('~')[0];
+
+      const dirPathA = filePathA.replace(/\.[^/.]+$/, '').replace(/\/index$/, '');
+      const dirPathB = filePathB.replace(/\.[^/.]+$/, '').replace(/\/index$/, '');
+
       const kindA = a.interface ? 'interface' : a.kind;
       const kindB = b.interface ? 'interface' : b.kind;
+
       if (kindA === kindB) {
-        if (filePathA === filePathB) {
+        if (dirPathA === dirPathB) {
           return a.longname > b.longname ? 1 : -1;
         } else {
-          return filePathA > filePathB ? 1 : -1;
+          return dirPathA > dirPathB ? 1 : -1;
         }
       } else {
         return kindOrder[kindA] > kindOrder[kindB] ? 1 : -1;
@@ -222,6 +227,8 @@ export default class DocBuilder {
       } else {
         dirPath = path.dirname(doc.longname.split('~')[0]);
       }
+
+      dirPath = dirPath.replace(/\/index$/, '');
 
       ice.load('name', this._buildDocLinkHTML(doc.longname));
       ice.load('kind', kindText);
