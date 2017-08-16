@@ -19,9 +19,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 class StaticFileBuilder extends _DocBuilder2.default {
   exec(writeFile, copyDir) {
-    copyDir(_path2.default.resolve(__dirname, './template/css'), './css');
-    copyDir(_path2.default.resolve(__dirname, './template/script'), './script');
-    copyDir(_path2.default.resolve(__dirname, './template/image'), './image');
+    copyDir(_path2.default.resolve(this._template, 'css'), './css');
+    copyDir(_path2.default.resolve(this._template, 'script'), './script');
+    copyDir(_path2.default.resolve(this._template, 'image'), './image');
   }
 }
 exports.default = StaticFileBuilder;

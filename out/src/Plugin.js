@@ -1,5 +1,9 @@
 'use strict';
 
+var _path = require('path');
+
+var _path2 = _interopRequireDefault(_path);
+
 var _taffydb = require('taffydb');
 
 var _iceCap = require('ice-cap');
@@ -63,6 +67,7 @@ class Plugin {
 
   onPublish(ev) {
     this._option = ev.data.option || {};
+    this._template = typeof this._option.template === 'string' ? _path2.default.resolve(process.cwd(), this._option.template) : _path2.default.resolve(__dirname, './Builder/template');
     this._exec(this._docs, ev.data.writeFile, ev.data.copyDir, ev.data.readFile);
   }
 
@@ -72,8 +77,8 @@ class Plugin {
     const data = (0, _taffydb.taffy)(tags);
 
     //bad hack: for other plugin uses builder.
-    _DocBuilder2.default.createDefaultBuilder = function () {
-      return new _DocBuilder2.default(data, tags);
+    _DocBuilder2.default.createDefaultBuilder = () => {
+      return new _DocBuilder2.default(this._template, data, tags);
     };
 
     let coverage = null;
@@ -83,20 +88,20 @@ class Plugin {
       // nothing
     }
 
-    new _IdentifiersDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _IndexDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _ClassDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _SingleDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _FileDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _StaticFileBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _SearchIndexBuilder2.default(data, tags).exec(writeFile, copyDir);
-    new _SourceDocBuilder2.default(data, tags).exec(writeFile, copyDir, coverage);
-    new _ManualDocBuilder2.default(data, tags).exec(writeFile, copyDir, readFile);
+    new _IdentifiersDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _IndexDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _ClassDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _SingleDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _FileDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _StaticFileBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _SearchIndexBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+    new _SourceDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir, coverage);
+    new _ManualDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir, readFile);
 
     const existTest = tags.find(tag => tag.kind.indexOf('test') === 0);
     if (existTest) {
-      new _TestDocBuilder2.default(data, tags).exec(writeFile, copyDir);
-      new _TestFileDocBuilder2.default(data, tags).exec(writeFile, copyDir);
+      new _TestDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
+      new _TestFileDocBuilder2.default(this._template, data, tags).exec(writeFile, copyDir);
     }
   }
 }

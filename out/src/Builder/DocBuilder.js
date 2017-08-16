@@ -38,9 +38,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 class DocBuilder {
   /**
    * create instance.
+   * @param {String} template - template absolute path
    * @param {Taffy} data - doc object database.
    */
-  constructor(data, tags) {
+  constructor(template, data, tags) {
+    this._template = template;
     this._data = data;
     this._tags = tags;
     new _DocResolver2.default(this).resolve();
@@ -160,7 +162,7 @@ class DocBuilder {
    * @protected
    */
   _readTemplate(fileName) {
-    const filePath = _path2.default.resolve(__dirname, `./template/${fileName}`);
+    const filePath = _path2.default.resolve(this._template, `./${fileName}`);
     return _fs2.default.readFileSync(filePath, { encoding: 'utf-8' });
   }
 
@@ -206,65 +208,38 @@ class DocBuilder {
     const kinds = ['class', 'function', 'variable', 'typedef', 'external'];
     const allDocs = this._find({ kind: kinds }).filter(v => !v.builtinExternal);
     const kindOrder = { class: 0, interface: 1, function: 2, variable: 3, typedef: 4, external: 5 };
-    const kindHeaders = {
-      class: 'Classes',
-      function: 'Functions',
-      variable: 'Variables',
-      typedef: 'Typedefs',
-      external: 'External'
-    };
 
     // see: IdentifiersDocBuilder#_buildIdentifierDoc
     allDocs.sort((a, b) => {
       const filePathA = a.longname.split('~')[0];
       const filePathB = b.longname.split('~')[0];
-
-      const dirPathA = filePathA.replace(/\.[^/.]+$/, '').replace(/\/index$/, '');
-      const dirPathB = filePathB.replace(/\.[^/.]+$/, '').replace(/\/index$/, '');
-
+      const dirPathA = _path2.default.dirname(filePathA);
+      const dirPathB = _path2.default.dirname(filePathB);
       const kindA = a.interface ? 'interface' : a.kind;
       const kindB = b.interface ? 'interface' : b.kind;
-
-      if (kindA === kindB) {
-        if (dirPathA === dirPathB) {
+      if (dirPathA === dirPathB) {
+        if (kindA === kindB) {
           return a.longname > b.longname ? 1 : -1;
         } else {
-          return dirPathA > dirPathB ? 1 : -1;
+          return kindOrder[kindA] > kindOrder[kindB] ? 1 : -1;
         }
       } else {
-        return kindOrder[kindA] > kindOrder[kindB] ? 1 : -1;
+        return dirPathA > dirPathB ? 1 : -1;
       }
     });
-
     let lastDirPath = '.';
-    let lastKind = '';
     ice.loop('doc', allDocs, (i, doc, ice) => {
+      const filePath = doc.longname.split('~')[0].replace(/^.*?[/]/, '');
+      const dirPath = _path2.default.dirname(filePath);
       const kind = doc.interface ? 'interface' : doc.kind;
       const kindText = kind.charAt(0).toUpperCase();
       const kindClass = `kind-${kind}`;
-
-      let dirPath;
-
-      if (kind === 'variable' || kind === 'function') {
-        dirPath = doc.longname.replace(/\.[^/.]+$/, '');
-      } else {
-        dirPath = _path2.default.dirname(doc.longname.split('~')[0]);
-      }
-
-      dirPath = dirPath.replace(/\/index$/, '');
-
       ice.load('name', this._buildDocLinkHTML(doc.longname));
       ice.load('kind', kindText);
       ice.attr('kind', 'class', kindClass);
-
       ice.text('dirPath', dirPath);
       ice.attr('dirPath', 'href', `identifiers.html#${(0, _util.escapeURLHash)(dirPath)}`);
       ice.drop('dirPath', lastDirPath === dirPath);
-
-      ice.text('kindHeader', kindHeaders[kind]);
-      ice.drop('kindHeader', lastKind === kind);
-
-      lastKind = kind;
       lastDirPath = dirPath;
     });
 
@@ -609,9 +584,9 @@ class DocBuilder {
   _getOutputFileName(doc) {
     switch (doc.kind) {
       case 'variable':
-        return `variable/${doc.memberof}.html`;
+        return 'variable/index.html';
       case 'function':
-        return `function/${doc.memberof}.html`;
+        return 'function/index.html';
       case 'member': // fall
       case 'method': // fall
       case 'constructor': // fall
